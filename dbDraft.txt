@@ -1,0 +1,35 @@
+CREATE (JadenK: User {username:"JadenK", name: "Jaden", lastName: "Kreiger", id: 0, email: "Sandra@olga.tv" })
+CREATE (NicCollins: User {username:"NicCollins", name: "Nickolas", lastName: "Collins", id: 1, email: "Virgie_Bode@ransom.ca"})
+CREATE (KWisoky: User {username:"KWisoky", name: "Keenan", lastName: "Wisoky", id: 2, email: "Cristopher@edgardo.biz"})
+CREATE (RParisian: User {username:"RParisian", name: "Reagan", lastName: "Parisian", id: 3, email: "Mable_Rippin@royce.net"})
+CREATE (JordiD: User {username:"JordiD", name: "Jordi", lastName: "Dibbert", id: 4, email: "Mario_Carroll@tiffany.org"})
+CREATE (CWatsica: User {username:"CWatsica", name: "Ciara", lastName: "Watsica", id: 5, email: "Fannie.Renner@charley.io"})
+CREATE (KelsieR: User {username:"KelsieR", name: "Kelsie", lastName: "Reilly", id: 6, email: "Walton@lourdes.name"})
+CREATE (BJast: User {username:"BJast", name: "Blaze", lastName: "Jast", id: 7, email: "Yoshiko@christina.tv"})
+CREATE (MarilieMiller: User {username:"MarilieMiller", name: "Marilie", lastName: "Miller", id: 8, email: "Jalyn.Friesen@geraldine.ca"})
+CREATE (MarianKessa: User {username:"MarianKessa", name: "Marian", lastName: "Kassulke", id: 9, email: "Carroll.Heller@stefan.tv"})
+
+CREATE (celiaco: Tag {id: 1, name: 'Celiaco'})
+CREATE (vegetariano: Tag {id: 2, name: 'Vegetariano'})
+CREATE (vegano: Tag {id: 3, name: 'Vegano'})
+
+CREATE (MarianKessa)-[:INTERESTED_IN]->(celiaco)
+CREATE (BJast)-[:INTERESTED_IN]->(vegano)
+CREATE (RParisian)-[:INTERESTED_IN]->(vegetariano)
+CREATE (MarianKessa)-[:INTERESTED_IN]->(vegano)
+
+CREATE (p1:Publication {type:"Receta", title:"Fideos con tuco", body:"Muy ricos"})
+CREATE (p2:Publication {type:"Receta", title:"Estofado", body:"El mejor del mundo"})
+CREATE (p3:Publication {type:"Consejo", title:"Caminar", body:"Todos los dias"})
+
+
+MATCH (p:Publication {title:"Fideos con tuco"}), (u:User {username: "JordiD"}) MERGE (p)-[:WRITED_BY]->(u)
+MATCH (p:Publication {title:"Fideos con tuco"}), (u:User {username: "JordiD"}) MERGE (u)-[:WRITES]->(p)
+MATCH (p:Publication {title:"Estofado"}), (u:User {username: "BJast"}) MERGE (p)-[:WRITED_BY]->(u)
+MATCH (p:Publication {title:"Estofado"}), (u:User {username: "BJast"}) MERGE (u)-[:WRITES]->(p)
+MATCH (p:Publication {title:"Caminar"}), (u:User {username: "JadenK"}) MERGE (p)-[:WRITED_BY]->(u)
+MATCH (p:Publication {title:"Caminar"}), (u:User {username: "JadenK"}) MERGE (u)-[:WRITES]->(p)
+
+MATCH (p:Publication {title:"Fideos con tuco"}), (t:Tag {name: "Celiaco"}) MERGE (p)-[:HAS]->(t)
+MATCH (p:Publication {title:"Fideos con tuco"}), (t:Tag {name: "Vegano"}) MERGE (p)-[:HAS]->(t)
+MATCH (p:Publication {title:"Estofado"}), (t:Tag {name: "Celiaco"}) MERGE (p)-[:HAS]->(t)
