@@ -1,19 +1,18 @@
-const { session, driver } = require('./../neo4j');
+const { driver, close } = require('./../neo4j');
 
 var express = require('express');
 var router = express.Router();
 
 /* GET users listing. */
 router.get('/', function (req, res) {
-    session
-        .run('MATCH(n:User) RETURN n')
+    const session = driver.session();
+    session.run('MATCH(n:User) RETURN n')
         .then(function (result) {
             let nodes = [];
             result.records.forEach(function (record) {
                 nodes.push(record.get(0).properties);
             })
             session.close();
-            driver.close();
             res.send(nodes);
         })
         .catch(function (error) {
@@ -23,6 +22,7 @@ router.get('/', function (req, res) {
 
 /* GET single user by username */
 router.get('/:username', function (req, res) {
+    const session = driver.session();
     session
         .run('MATCH(n:User) WHERE n.username = $username RETURN n', {username: req.params.username})
         .then(function (result) {
@@ -34,11 +34,28 @@ router.get('/:username', function (req, res) {
                 res.send(node.properties);
             }
             session.close();
-            driver.close();
         })
         .catch(function (error) {
             console.log(error);
         });
+});
+
+/* GET interest of username */
+router.get('/:username/interests', function (req, res) {
+    const session = driver.session();
+    session
+      .run('MATCH(n:User)-[:INTERESTED_IN]-(t:Tag) WHERE n.username = $username RETURN t', {username: req.params.username})
+      .then(function (result) {
+          let nodes = [];
+          result.records.forEach(function (record) {
+              nodes.push(record.get(0).properties);
+          })
+          session.close();
+          res.send(nodes);
+      })
+      .catch(function (error) {
+          console.log(error);
+      });
 });
 
 /* PUT user registration
@@ -49,29 +66,26 @@ router.put('/', function (req, res){
 
     let user = req.body;
 
+    console.log(user);
+
+    const session = driver.session();
     session
         .run('CREATE (u:User {username:$username, name:$name, lastName:$lastName, email:$email, password:$password}) return ID(u)',
             {username:user.username, name: user.name, lastName: user.lastName, email: user.email, password: user.password})
         .then(function (result) {
             let singleRecord = result.records[0];
             let node = singleRecord.get(0);
-            console.log(node.properties);
-            session.close();
-            driver.close();
+            user.tags.forEach(function(tag){
+              session
+                .run('MATCH (u:User {username: $username}), (t:Tag {name: $tag}) MERGE (u)-[:Interests]->(t)', {username: user.username, tag:tag})
+                .then(function () {
+                    session.close();
+                });
+            });
         })
         .catch(function (error) {
             console.log(error);
         })
-
-    user.tags.forEach(function(tag){
-        console.log(tag);
-        session
-            .run('MATCH (u:User {username: $username}), (t:Tag {name: $tag}) MERGE (u)-[:Interests]->(t)', {username: user.username, tag:tag})
-            .then(function () {
-                session.close();
-                driver.close();
-            });
-    });
 
 });
 
@@ -87,6 +101,7 @@ router.put('/:username/publication', function (req, res) {
     console.log(user);
     console.log(publication);
 
+    const session = driver.session();
     session
         .run('CREATE (p:Publication {type: $type, title:$title, body:$body}) return ID(p)', {type: publication.type, title:publication.title, body:publication.body})
         .then(function (result) {
@@ -94,7 +109,6 @@ router.put('/:username/publication', function (req, res) {
             const node = singleRecord.get(0);
             console.log(node);
             session.close();
-            driver.close();
         })
         .catch(function (error) {
             console.log(error);
@@ -106,7 +120,6 @@ router.put('/:username/publication', function (req, res) {
             .run('MATCH (p:Publication {title:$title}), (t:Tag {name: $tag}) MERGE (p)-[:HAS]->(t)', {title: publication.title, tag: tag})
             .then(function () {
                 session.close();
-                driver.close();
             });
     })
 
@@ -114,13 +127,11 @@ router.put('/:username/publication', function (req, res) {
     session.run('MATCH (u:User {username: $username}), (p:Publication {title: $title}) MERGE (u)-[:WRITES]->(p)', {username: user, title: publication.title})
         .then(function () {
             session.close();
-            driver.close();
         });
 
     session.run('MATCH (p:Publication {title: $title}), (u:User {username: $username}) MERGE (p)-[:WRITED_BY]->(u)', {title: publication.title, username: user})
         .then(function () {
             session.close();
-            driver.close();
         });
 
 })
@@ -134,6 +145,7 @@ router.get('/:username/publication', function (req, res) {
 
     let user = req.params.username;
 
+    const session = driver.session();
     session
         .run('MATCH (u:User)-[:WRITES]->(p:Publication) WHERE u.username = $username RETURN p', {username: user})
         .then(function (result) {
@@ -164,6 +176,7 @@ router.get('/:username/related', function (req, res) {
     let user = req.params.username;
     const nodes = [];
 
+    const session = driver.session();
     session
         .run('MATCH (u:User)-[:Interests]->(t:Tag) WHERE u.username = $username RETURN t', {username: user})
         .then(function (result) {

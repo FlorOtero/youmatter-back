@@ -1,10 +1,11 @@
-const { session, close } = require('./../neo4j');
+const { close, driver } = require('./../neo4j');
 
 var express = require('express');
 var router = express.Router();
 
 /* GET tags. */
 router.get('/tags', function (req, res) {
+    const session = driver.session();
     session
         .run('MATCH (t:Tag) RETURN t')
         .then(function (result) {
@@ -12,7 +13,7 @@ router.get('/tags', function (req, res) {
         result.records.forEach(function (record) {
             nodes.push(record.get(0).properties);
         })
-        close();
+        session.close();
         res.send(nodes);
     })
         .catch(function (error) {
@@ -22,16 +23,16 @@ router.get('/tags', function (req, res) {
 
 /* GET publication types. */
 router.get('/types', function (req, res) {
+    const session = driver.session();
     session
         .run('MATCH (p:Publication) RETURN collect(distinct p.type)')
         .then(function (result) {
-            let nodes = [];
+            let response = [];
             result.records.forEach(function (record) {
-                nodes.push(record.get(0));
+              response = record.get(0);
             })
             session.close();
-            driver.close();
-            res.send(nodes);
+            res.send(response);
         })
         .catch(function (error) {
             console.log(error);
