@@ -77,10 +77,11 @@ router.put('/', function (req, res){
             let node = singleRecord.get(0);
 
             const relations = user.tags.map((tag) => 
-              session.run('MATCH (u:User {username: $username}), (t:Tag {name: $tag}) MERGE (u)-[:Interests]->(t)', {username: user.username, tag:tag})
+              session.run('MATCH (u:User {username: $username}), (t:Tag {name: $tag}) MERGE (u)-[:INTERESTED_IN]->(t)', {username: user.username, tag:tag})
             );
 
             Promise.all(relations).then(values => { 
+              res.send(user);
               session.close();
             }, reason => {
               console.log(reason)
