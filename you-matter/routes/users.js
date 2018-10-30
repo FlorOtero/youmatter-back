@@ -75,12 +75,15 @@ router.put('/', function (req, res){
         .then(function (result) {
             let singleRecord = result.records[0];
             let node = singleRecord.get(0);
-            user.tags.forEach(function(tag){
-              session
-                .run('MATCH (u:User {username: $username}), (t:Tag {name: $tag}) MERGE (u)-[:Interests]->(t)', {username: user.username, tag:tag})
-                .then(function () {
-                    session.close();
-                });
+
+            const relations = user.tags.map((tag) => 
+              session.run('MATCH (u:User {username: $username}), (t:Tag {name: $tag}) MERGE (u)-[:Interests]->(t)', {username: user.username, tag:tag})
+            );
+
+            Promise.all(relations).then(values => { 
+              session.close();
+            }, reason => {
+              console.log(reason)
             });
         })
         .catch(function (error) {
