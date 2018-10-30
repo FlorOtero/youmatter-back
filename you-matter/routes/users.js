@@ -177,38 +177,24 @@ router.get('/:username/related', function (req, res) {
     const nodes = [];
 
     const session = driver.session();
-    session
-        .run('MATCH (u:User)-[:Interests]->(t:Tag) WHERE u.username = $username RETURN t', {username: user})
-        .then(function (result) {
-            if (result.records.length == 0) {
-                res.send(null);
-            } else {
-                result.records.forEach(function (record) {
-                    nodes.push(record.get(0).properties.name);
-                })
-            }
-
-            session.run('MATCH (p:Publication)-[:HAS]->(t:Tag) WHERE t.name IN $nodes RETURN p', {nodes: nodes})
-                .then(function (result) {
-                    if (result.records.length == 0) {
-                        res.send(null);
-                    } else {
-                        let related = [];
-                        result.records.forEach(function (record) {
-                            related.push(record.get(0).properties);
-                        })
-                        console.log(related);
-                        res.send(related);
-                    }
+        session.run('MATCH(u:User{username:$username})-[:INTERESTED_IN]->(t:Tag)<-[:HAS]-(p:Publication) RETURN p', {username: user})
+            .then(function (result) {
+                console.log(result);
+                if (result.records.length == 0) {
+                    res.send(null);
+                } else {
+                    let related = [];
+                    result.records.forEach(function (record) {
+                        related.push(record.get(0).properties);
+                    })
                     session.close();
-                    driver.close();
-                })
-
-        })
-        .catch(function (error) {
-            console.log(error);
-        });
-
+                    console.log(related);
+                    res.send(related);
+                }
+                
+            }).catch(function (error) {
+              console.log(error);
+            })
 });
 
 module.exports = router;
