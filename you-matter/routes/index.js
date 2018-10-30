@@ -1,6 +1,4 @@
-const neo4j = require('neo4j-driver').v1;
-const driver = neo4j.driver("bolt://localhost", neo4j.auth.basic("youmatter", "youmatter"));
-const session = driver.session();
+const { session, close } = require('./../neo4j');
 
 var express = require('express');
 var router = express.Router();
@@ -14,8 +12,7 @@ router.get('/tags', function (req, res) {
         result.records.forEach(function (record) {
             nodes.push(record.get(0).properties);
         })
-        session.close();
-        driver.close();
+        close();
         res.send(nodes);
     })
         .catch(function (error) {
