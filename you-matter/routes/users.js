@@ -181,7 +181,7 @@ router.get('/:username/related', function (req, res) {
     const nodes = [];
 
     const session = driver.session();
-        session.run('MATCH m=(u:User{username:$username})-[:INTERESTED_IN]->(t:Tag)<-[:HAS]-(p:Publication) RETURN p.title,p.body,p.type,id(p),collect(t.name) AS tags', {username: user})
+        session.run('MATCH (u:User{username:$username})--(p:Publication)-[:HAS]->(t:Tag) RETURN p.title,p.body,p.type,id(p),collect(t.name) AS tags', {username: user})
             .then(function (result) {
                 if (result.records.length == 0) {
                     res.send(null);
@@ -203,6 +203,37 @@ router.get('/:username/related', function (req, res) {
             }).catch(function (error) {
               console.log(error);
             })
+});
+
+router.get('/:username/search/:search', function (req, res) {
+
+  let user = req.params.username;
+  let search = req.params.search;
+  const nodes = [];
+
+  const session = driver.session();
+      session.run('MATCH (u:User{username:$username})--(p:Publication)-[:HAS]->(t:Tag) where lower(p.title) contains lower($search) or lower(p.body) contains lower($search) RETURN p.title,p.body,p.type,id(p),collect(t.name) AS tags', {username: user, search})
+          .then(function (result) {
+              if (result.records.length == 0) {
+                  res.send(null);
+              } else {
+                  let related = [];
+                  result.records.forEach(function (record) {
+                      related.push({
+                        title: record.get('p.title'),
+                        body: record.get('p.body'),
+                        type: record.get('p.type'),
+                        tags: record.get('tags').join(', '),
+                      });
+                  })
+                  session.close();
+                  console.log(related);
+                  res.send(related);
+              }
+              
+          }).catch(function (error) {
+            console.log(error);
+          })
 });
 
 module.exports = router;
