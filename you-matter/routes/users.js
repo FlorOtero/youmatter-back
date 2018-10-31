@@ -181,7 +181,7 @@ router.get('/:username/related', function (req, res) {
     const nodes = [];
 
     const session = driver.session();
-        session.run('MATCH (u:User{username:$username})--(p:Publication)-[:HAS]->(t:Tag) RETURN p.title,p.body,p.type,id(p),collect(t.name) AS tags', {username: user})
+        session.run('MATCH (u:User{username:$username})--(p:Publication)-[:HAS]->(t:Tag) RETURN p.title,p.body,p.type,id(p),collect(distinct t.name) AS tags', {username: user})
             .then(function (result) {
                 if (result.records.length == 0) {
                     res.send(null);
@@ -212,7 +212,7 @@ router.get('/:username/search/:search', function (req, res) {
   const nodes = [];
 
   const session = driver.session();
-      session.run('MATCH (u:User{username:$username})--(p:Publication)-[:HAS]->(t:Tag) where lower(p.title) contains lower($search) or lower(p.body) contains lower($search) RETURN p.title,p.body,p.type,id(p),collect(t.name) AS tags', {username: user, search})
+      session.run('MATCH (u:User{username:$username})--(p:Publication)-[:HAS]->(t:Tag) where lower(p.title) contains lower($search) or lower(p.body) contains lower($search) RETURN p.title,p.body,p.type,id(p),collect(distinct t.name) AS tags', {username: user, search})
           .then(function (result) {
               if (result.records.length == 0) {
                   res.send(null);
