@@ -183,13 +183,17 @@ router.get('/:username/related', function (req, res) {
     const session = driver.session();
         session.run('MATCH m=(u:User{username:$username})-[:INTERESTED_IN]->(t:Tag)<-[:HAS]-(p:Publication) RETURN p.title,p.body,p.type,id(p),collect(t.name) AS tags', {username: user})
             .then(function (result) {
-                console.log(result);
                 if (result.records.length == 0) {
                     res.send(null);
                 } else {
                     let related = [];
                     result.records.forEach(function (record) {
-                        related.push(record.get(0).properties);
+                        related.push({
+                          title: record.get('p.title'),
+                          body: record.get('p.body'),
+                          type: record.get('p.type'),
+                          tags: record.get('tags').join(', '),
+                        });
                     })
                     session.close();
                     console.log(related);
