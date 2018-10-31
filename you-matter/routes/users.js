@@ -181,7 +181,7 @@ router.get('/:username/related', function (req, res) {
     const nodes = [];
 
     const session = driver.session();
-        session.run('MATCH(u:User{username:$username})-[:INTERESTED_IN]->(t:Tag)<-[:HAS]-(p:Publication) RETURN p', {username: user})
+        session.run('MATCH m=(u:User{username:$username})-[:INTERESTED_IN]->(t:Tag)<-[:HAS]-(p:Publication) RETURN p.title,p.body,p.type,id(p),collect(t.name) AS tags', {username: user})
             .then(function (result) {
                 console.log(result);
                 if (result.records.length == 0) {
