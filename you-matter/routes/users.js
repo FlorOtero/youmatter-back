@@ -162,10 +162,11 @@ router.get('/:username/publication', function (req, res) {
 router.get('/:username/related', function (req, res) {
 
     let user = req.params.username;
+    const tag = req.query.tag;
     const nodes = [];
 
     const session = driver.session();
-        session.run('MATCH (u:User{username:$username})-[:INTERESTED_IN]->(t:Tag)<-[:HAS]-(p:Publication) RETURN p.title,p.body,p.type,id(p),collect(distinct t.name) AS tags', {username: user})
+        session.run(`MATCH (u:User{username:$username})-[:INTERESTED_IN]->(t:Tag)<-[:HAS]-(p:Publication${tag ? '{type:$tag}': ''}) RETURN p.title,p.body,p.type,id(p),collect(distinct t.name) AS tags`, {username: user, tag})
             .then(function (result) {
                 if (result.records.length == 0) {
                     res.send(null);
@@ -193,10 +194,11 @@ router.get('/:username/search/:search', function (req, res) {
 
   let user = req.params.username;
   let search = req.params.search;
+  const tag = req.query.tag;
   const nodes = [];
 
   const session = driver.session();
-      session.run('MATCH (u:User{username:$username})-[:INTERESTED_IN]->(t:Tag)<-[:HAS]-(p:Publication) where lower(p.title) contains lower($search) or lower(p.body) contains lower($search) RETURN p.title,p.body,p.type,id(p),collect(distinct t.name) AS tags', {username: user, search})
+      session.run(`MATCH (u:User{username:$username})-[:INTERESTED_IN]->(t:Tag)<-[:HAS]-(p:Publication${tag ? '{type:$tag}': ''}) where lower(p.title) contains lower($search) or lower(p.body) contains lower($search) RETURN p.title,p.body,p.type,id(p),collect(distinct t.name) AS tags`, {username: user, search, tag})
           .then(function (result) {
               if (result.records.length == 0) {
                   res.send(null);
