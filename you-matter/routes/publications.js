@@ -5,17 +5,29 @@ var router = express.Router();
 
 router.get('/:id', function (req, res) {
   const session = driver.session();
-  session.run(`MATCH (p:Publication) WHERE id(p) = ${req.params.id} RETURN p`)
+  session.run(`MATCH (t:Tag)<-[h:HAS]-(p:Publication)-[w:WRITED_BY]->(u:User) WHERE id(p) = ${req.params.id} RETURN p,u,t`)
     .then(function (result) {
-      let nodes = [];
-      result.records.forEach(function (record) {
-        nodes.push(record.get(0).properties);
-      })
       session.close();
-      res.send(nodes);
+      res.send({
+        ...result.records[0].get("p").properties,
+        writedBy: result.records[0].get("u").properties,
+        tags: result.records.map(record => record.get("t").properties),
+      });
     })
     .catch(function (error) {
-      console.log(error);
+      res.status(500).send("error");
+    });
+});
+
+router.get('/:id/rates', function (req, res) {
+  const session = driver.session();
+  session.run(`MATCH (p:Publication)<-[r:RATES]-(:User) WHERE id(p) = ${req.params.id} RETURN r`)
+    .then(function (result) {
+      session.close();
+      res.send(result.records.map(record => record.get("r").properties))
+    })
+    .catch(function (error) {
+      res.status(500).send("error");
     });
 });
 
