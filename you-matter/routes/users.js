@@ -98,46 +98,30 @@ router.put('/', function (req, res){
 Crea publicación. Tiene type, tags, title, body
 */
 router.put('/:username/publication', function (req, res) {
+  const session = driver.session();
+  let user = req.params.username;
+  let publication = req.body;
+  const promises = [];
 
-    let user = req.params.username;
-    let publication = req.body;
+  console.log(user);
+  console.log(publication);
+    
+  promises.push(session.run('CREATE (p:Publication {type: $type, title:$title, body:$body}) return ID(p)', {type: publication.type, title:publication.title, body:publication.body}));
 
-    console.log(user);
-    console.log(publication);
+  //todo matchear por el id
+  publication.tags.forEach(function (tag) {
+    promises.push(session.run('MATCH (p:Publication {title:$title}), (t:Tag {name: $tag}) MERGE (p)-[:HAS]->(t)', {title: publication.title, tag: tag}));
+  })
 
-    const session = driver.session();
-    session
-        .run('CREATE (p:Publication {type: $type, title:$title, body:$body}) return ID(p)', {type: publication.type, title:publication.title, body:publication.body})
-        .then(function (result) {
-            let singleRecord = result.records[0];
-            const node = singleRecord.get(0);
-            console.log(node);
-            session.close();
-        })
-        .catch(function (error) {
-            console.log(error);
-        })
+  //todo optimizar queries
+  promises.push(session.run('MATCH (u:User {username: $username}), (p:Publication {title: $title}) MERGE (u)-[:WRITES]->(p)', {username: user, title: publication.title}));
+  promises.push(session.run('MATCH (p:Publication {title: $title}), (u:User {username: $username}) MERGE (p)-[:WRITED_BY]->(u)', {title: publication.title, username: user}));
 
-    //todo matchear por el id
-    publication.tags.forEach(function (tag) {
-        session
-            .run('MATCH (p:Publication {title:$title}), (t:Tag {name: $tag}) MERGE (p)-[:HAS]->(t)', {title: publication.title, tag: tag})
-            .then(function () {
-                session.close();
-            });
-    })
-
-    //todo optimizar queries
-    session.run('MATCH (u:User {username: $username}), (p:Publication {title: $title}) MERGE (u)-[:WRITES]->(p)', {username: user, title: publication.title})
-        .then(function () {
-            session.close();
-        });
-
-    session.run('MATCH (p:Publication {title: $title}), (u:User {username: $username}) MERGE (p)-[:WRITED_BY]->(u)', {title: publication.title, username: user})
-        .then(function () {
-            session.close();
-        });
-
+  Promise.all(promises).then(() => { 
+    res.status(200).send('Ok');
+  }).catch(() => {
+    res.status(500).send('Algo salió mal');
+  });
 })
 
 /*
