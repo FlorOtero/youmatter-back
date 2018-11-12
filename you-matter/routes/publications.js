@@ -63,7 +63,7 @@ router.put('/:id/rates', function (req, res) {
 * */
 router.get('/:id/rating', function (req, res) {
     const session = driver.session();
-    session.run(`MATCH (p:Publication)<-[r:RATES]-(:User) WHERE id(p) = ${req.params.id} RETURN SUM(r.value)`)
+    session.run(`MATCH (p:Publication)<-[r:RATES]-(:User) WHERE id(p) = ${req.params.id} RETURN AVG(r.value)`)
         .then(function (result) {
             session.close();
             res.send(result.records[0].get(0));
