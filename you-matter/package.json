@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "forever ./bin/www",
+    "start": "forever ./bin/www -s",
     "start-dev": "node ./bin/www"
   },
   "dependencies": {
