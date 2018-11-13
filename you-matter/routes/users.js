@@ -206,6 +206,7 @@ router.get('/:username/search/:search', function (req, res) {
                   let related = [];
                   result.records.forEach(function (record) {
                       related.push({
+                        id: record.get('id(p)').low,
                         title: record.get('p.title'),
                         body: record.get('p.body'),
                         type: record.get('p.type'),
