@@ -30,7 +30,7 @@ router.get('/:id/rates', function (req, res) {
       session.close();
       res.send(result.records.map(record => ({
         message: record.get("r").properties.message,
-        value: record.get("r").properties.value.high,
+        value: record.get("r").properties.value.low + record.get("r").properties.value.high,
         user: `${record.get("u").properties.name} ${record.get("u").properties.lastName}`,
       })))
     })
@@ -50,8 +50,9 @@ router.get('/:id/rates', function (req, res) {
 * */
 router.put('/:id/rates', function (req, res) {
     const session = driver.session();
+    const { username, id, message, value } = req.body;
 
-    session.run('MATCH (p:Publication), (u:User) WHERE id(p) = $id and id(u) = $uid MERGE (u)-[r:RATES{value:$value, message: $message}]->(p) RETURN r', {id: req.params.id, uid: req.params.uid, value: req.params.value, message: req.params.message})
+    session.run(`MATCH (p:Publication), (u:User{username:"${username}"}) WHERE id(p) = ${id} MERGE (u)-[r:RATES{value:${value}, message: "${message}"}]->(p) RETURN r`)
         .then(function (result) {
             session.close();
             res.send(result.records.map(record => record.get("r").properties))
@@ -70,7 +71,7 @@ router.get('/:id/rating', function (req, res) {
     session.run(`MATCH (p:Publication)<-[r:RATES]-(:User) WHERE id(p) = ${req.params.id} RETURN AVG(r.value)`)
         .then(function (result) {
             session.close();
-            res.send(result.records[0].get(0));
+            res.send({value: result.records[0].get(0)});
         })
         .catch(function (error) {
             res.status(500).send("error");
