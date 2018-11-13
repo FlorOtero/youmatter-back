@@ -25,10 +25,14 @@ router.get('/:id', function (req, res) {
  * */
 router.get('/:id/rates', function (req, res) {
   const session = driver.session();
-  session.run(`MATCH (p:Publication)<-[r:RATES]-(:User) WHERE id(p) = ${req.params.id} RETURN r`)
+  session.run(`MATCH (p:Publication)<-[r:RATES]-(u:User) WHERE id(p) = ${req.params.id} RETURN r,u`)
     .then(function (result) {
       session.close();
-      res.send(result.records.map(record => record.get("r").properties))
+      res.send(result.records.map(record => ({
+        message: record.get("r").properties.message,
+        value: record.get("r").properties.value.high,
+        user: `${record.get("u").properties.name} ${record.get("u").properties.lastName}`,
+      })))
     })
     .catch(function (error) {
       res.status(500).send("error");
